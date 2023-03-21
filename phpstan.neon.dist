@@ -1,0 +1,16 @@
+includes:
+	- ./vendor/nunomaduro/larastan/extension.neon
+
+parameters:
+
+	paths:
+		- src/
+
+	# Level 9 is the highest level
+	level: max
+
+	checkMissingIterableValueType: false
+	checkGenericClassInNonGenericObjectType: false
+
+	# TODO Check later
+	treatPhpDocTypesAsCertain: false

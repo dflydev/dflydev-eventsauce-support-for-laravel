@@ -1,0 +1,28 @@
+{
+    "name": "dflydev/eventsauce-support-for-laravel",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.1",
+        "eventsauce/eventsauce": "^3",
+        "eventsauce/message-outbox-for-illuminate": "^0.4",
+        "eventsauce/message-repository-for-illuminate": "^0.4",
+        "dflydev/eventsauce-support": "^0@dev"
+    },
+    "autoload": {
+        "psr-4": {
+            "Dflydev\\EventSauce\\SupportForLaravel\\": "src/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.x-dev"
+        }
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.15.1",
+        "phpstan/phpstan": "^1.10",
+        "nunomaduro/larastan": "^2.5",
+        "orchestra/testbench": "^8.0"
+    }
+}
