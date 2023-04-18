@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  *
  * @property int $aggregate_root_version
  *
+ * @method fill(array $attributes)
  * @method static \Illuminate\Database\Eloquent\Builder query()
  * @method static string aggregateRootIdColumnName()
  */
@@ -24,60 +25,6 @@ trait EloquentAggregateRootBehaviour
      * @use EventedAggregateRootBehaviour<T2>
      */
     use EventedAggregateRootBehaviour;
-
-    public function initializeEloquentAggregateRootBehaviour(): void
-    {
-        // dump(['initializeEloquentAggregateRootBehaviour:in' => static::class, 'casts' => $this->casts]);
-        // foreach ($this->casts as $cast) {
-        //     if (!is_string($cast)) {
-        //         continue;
-        //     }
-        //
-        //     if (!class_exists($cast)) {
-        //         continue;
-        //     }
-        //
-        //     $interfaces = class_implements($cast) ?: [];
-        //
-        //     if (!in_array(StaticCastable::class, $interfaces)) {
-        //         continue;
-        //     }
-        //
-        //     /** @var StaticCastable $cast */
-        //     $this->casts[static::aggregateRootIdColumnName()] = $cast::castUsing();
-        // }
-        // dump(['initializeEloquentAggregateRootBehaviour:out' => static::class, 'casts' => $this->casts]);
-
-        // foreach (self::registerIdentityCasts() as $attribute => $identityClassName) {
-        //     $implementedClasses = class_implements($identityClassName) ?: [];
-
-        // if (in_array(CasterAware::class, $implementedClasses)) {
-        //     /** @var CasterAware $identityClassName */
-        //     $this->casts[$attribute] = $identityClassName::castUsing();
-        //
-        //     continue;
-        // }
-        //
-        // if (in_array(CastsAttributes::class, $implementedClasses)) {
-        //     /** @var CastsAttributes $identityClassName */
-        //     $this->casts[$attribute] = $identityClassName::class;
-        //
-        //     continue;
-        // }
-
-        // $this->casts[$attribute] = new class() implements CastsAttributes {
-        //     public function get(Model $model, string $key, mixed $value, array $attributes): mixed
-        //     {
-        //         return $value;
-        //     }
-        //
-        //     public function set(Model $model, string $key, mixed $value, array $attributes): mixed
-        //     {
-        //         return $value;
-        //     }
-        // };
-        // }
-    }
 
     public static function bootEloquentAggregateRootBehaviour(): void
     {
@@ -116,6 +63,29 @@ trait EloquentAggregateRootBehaviour
     public static function syncAggregateRootVersion(EloquentAggregateRoot $model): void
     {
         $model->setAttribute('aggregate_root_version', $model->aggregateRootVersion());
-        $model->setAttribute('aggregate_root_version', $model->aggregateRootVersion());
+    }
+
+    public static function reconstituteAndPersistFromEvents(AggregateRootId $aggregateRootId, \Generator $events): static
+    {
+        $aggregateRoot = new self();
+
+        $aggregateRoot->fill([
+            static::aggregateRootIdColumnName() => $aggregateRootId,
+        ]);
+
+        /** @var object $event */
+        foreach ($events as $event) {
+            $aggregateRoot->apply($event);
+        }
+
+        $aggregateRootVersion = $events->getReturn();
+
+        $aggregateRoot->aggregateRootVersion = (is_int($aggregateRootVersion) && $aggregateRootVersion >= 0)
+            ? $aggregateRootVersion
+            : 0;
+
+        $aggregateRoot->persistAggregateRoot();
+
+        return $aggregateRoot;
     }
 }
