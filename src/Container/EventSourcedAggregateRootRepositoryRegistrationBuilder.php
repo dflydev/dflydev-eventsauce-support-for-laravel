@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Dflydev\EventSauce\SupportForLaravel\Container;
 
 use Dflydev\EventSauce\Support\AggregateRoot\EventSourcedAggregateRoot;
+use Dflydev\EventSauce\Support\AggregateRoot\EventSourcedAggregateRootRepository;
 use Dflydev\EventSauce\Support\Transaction\Transaction;
-use Dflydev\EventSauce\SupportForLaravel\AggregateRoot\EloquentAggregateRoot;
 use Dflydev\EventSauce\SupportForLaravel\EventSauceConfiguration;
 use EventSauce\EventSourcing\AggregateRootRepository;
 use EventSauce\EventSourcing\MessageDispatcher;
@@ -14,7 +14,6 @@ use EventSauce\EventSourcing\MessageRepository;
 use EventSauce\EventSourcing\SynchronousMessageDispatcher;
 use EventSauce\MessageOutbox\OutboxRepository;
 use Illuminate\Contracts\Foundation\Application;
-use Dflydev\EventSauce\Support\AggregateRoot\EventSourcedAggregateRootRepository;
 
 final class EventSourcedAggregateRootRepositoryRegistrationBuilder
 {
@@ -37,7 +36,6 @@ final class EventSourcedAggregateRootRepositoryRegistrationBuilder
      * @var MessageDispatcher|class-string<MessageDispatcher>|null
      */
     private MessageDispatcher|string|null $synchronousMessageDispatcher = null;
-    private bool $withoutMessageRepository = false;
     private bool $withoutOutboxRepository = false;
     private bool $withoutTransactionalMessageDispatcher = false;
     private bool $withoutSynchronousMessageDispatcher = false;
@@ -95,14 +93,6 @@ final class EventSourcedAggregateRootRepositoryRegistrationBuilder
         return $instance;
     }
 
-    public function withoutMessageRepository(): self
-    {
-        $instance = clone $this;
-        $instance->withoutMessageRepository = true;
-
-        return $instance;
-    }
-
     public function withoutOutboxRepository(): self
     {
         $instance = clone $this;
@@ -152,18 +142,21 @@ final class EventSourcedAggregateRootRepositoryRegistrationBuilder
             /** @var Transaction $transaction */
             $transaction = $app->get(Transaction::class);
 
+            /** @var MessageRepository|class-string<MessageRepository>|null $messageRepository */
+            $messageRepository = $this->messageRepository ?? $app->get(MessageRepository::class);
+
+            if (is_string($messageRepository)) {
+                /** @var MessageRepository|null $messageRepository */
+                $messageRepository = $app->get($messageRepository);
+            }
+
+            assert(!is_null($messageRepository), 'Message repository is null.');
+
             $args = [
                 $aggregateRootClassName,
                 $transaction,
+                $messageRepository,
             ];
-
-            if (!$this->withoutMessageRepository) {
-                if (isset($this->messageRepository)) {
-                    $args['messageRepository'] = is_object($this->messageRepository) ? $this->messageRepository : $app->get($this->messageRepository);
-                } elseif ($app->bound(MessageRepository::class)) {
-                    $args['messageRepository'] = $app->get(MessageRepository::class);
-                }
-            }
 
             if (!$this->withoutOutboxRepository) {
                 if (isset($this->outboxRepository)) {
