@@ -8,6 +8,7 @@ use Dflydev\EventSauce\Support\LazyMessageConsumption\LazyMessageConsumer;
 use Dflydev\EventSauce\Support\MessagePreparation\MessagePreparation;
 use Dflydev\EventSauce\Support\Transaction\Transaction;
 use Dflydev\EventSauce\SupportForLaravel\Container\EloquentAggregateRootRepositoryRegistrationBuilder;
+use Dflydev\EventSauce\SupportForLaravel\Container\EventSourcedAggregateRootRepositoryRegistrationBuilder;
 use EventSauce\EventSourcing\ClassNameInflector;
 use EventSauce\EventSourcing\DefaultHeadersDecorator;
 use EventSauce\EventSourcing\Message;
@@ -303,5 +304,10 @@ final class EventSauceConfiguration
     public static function eloquentRepositoryRegistration(): EloquentAggregateRootRepositoryRegistrationBuilder
     {
         return EloquentAggregateRootRepositoryRegistrationBuilder::new();
+    }
+
+    public static function eventSourcedRepositoryRegistration(): EventSourcedAggregateRootRepositoryRegistrationBuilder
+    {
+        return EventSourcedAggregateRootRepositoryRegistrationBuilder::new();
     }
 }
