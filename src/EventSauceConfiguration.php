@@ -7,10 +7,15 @@ namespace Dflydev\EventSauce\SupportForLaravel;
 use Dflydev\EventSauce\Support\LazyMessageConsumption\LazyMessageConsumer;
 use Dflydev\EventSauce\Support\MessagePreparation\MessagePreparation;
 use Dflydev\EventSauce\Support\Transaction\Transaction;
+use Dflydev\EventSauce\SupportForLaravel\Configuration\ApplicationBoundMessageConsumerConfiguration;
+use Dflydev\EventSauce\SupportForLaravel\Configuration\ApplicationBoundTestConfiguration;
 use Dflydev\EventSauce\SupportForLaravel\Container\EloquentAggregateRootRepositoryRegistrationBuilder;
 use Dflydev\EventSauce\SupportForLaravel\Container\EventSourcedAggregateRootRepositoryRegistrationBuilder;
+use EventSauce\EventSourcing\AggregateRoot;
+use EventSauce\EventSourcing\AggregateRootRepository;
 use EventSauce\EventSourcing\ClassNameInflector;
 use EventSauce\EventSourcing\DefaultHeadersDecorator;
+use EventSauce\EventSourcing\InMemoryMessageRepository;
 use EventSauce\EventSourcing\Message;
 use EventSauce\EventSourcing\MessageConsumer;
 use EventSauce\EventSourcing\MessageDecorator;
@@ -31,6 +36,14 @@ use LogicException;
 
 final class EventSauceConfiguration
 {
+    /**
+     * @param class-string<AggregateRoot> $aggregateRootClassName
+     */
+    public static function eventSauceRepositoryServiceName(string $aggregateRootClassName): string
+    {
+        return $aggregateRootClassName.'.EventSauceAggregateRootRepository';
+    }
+
     public static function synchronousMessageDispatcherServiceName(): string
     {
         return MessageDispatcher::class.'.synchronous';
@@ -78,6 +91,16 @@ final class EventSauceConfiguration
                 $application->tag($messageConsumerClassName, $tag);
             }
         }
+    }
+
+    public static function configureMessageConsumers(?Application $application = null): ApplicationBoundMessageConsumerConfiguration
+    {
+        return new ApplicationBoundMessageConsumerConfiguration($application ?? app());
+    }
+
+    public static function configureForTesting(?Application $application = null): ApplicationBoundTestConfiguration
+    {
+        return new ApplicationBoundTestConfiguration($application ?? app());
     }
 
     public static function registerNonLazySynchronousMessageConsumer(string|array $messageConsumerClassName, ?Application $application = null): void
@@ -135,9 +158,16 @@ final class EventSauceConfiguration
         self::registerMessageConsumer(
             self::consumesMessagesTransactionallyTagName(),
             $messageConsumerClassName,
-            lazy: true,
             application: $application
         );
+    }
+
+    public static function fakeSynchronousMessageDispatcher(?MessageDispatcher $messageDispatcher = null, ?Application $application = null): void
+    {
+        $application = $application ?? app();
+        $messageDispatcher = $messageDispatcher ?? new SynchronousMessageDispatcher();
+
+        $application->singleton(self::synchronousMessageDispatcherServiceName(), fn () => $messageDispatcher);
     }
 
     public static function registerSynchronousMessageDispatcher(?Application $application = null): void
@@ -152,6 +182,14 @@ final class EventSauceConfiguration
         });
     }
 
+    public static function fakeTransactionalMessageDispatcher(?MessageDispatcher $messageDispatcher = null, ?Application $application = null): void
+    {
+        $application = $application ?? app();
+        $messageDispatcher = $messageDispatcher ?? new SynchronousMessageDispatcher();
+
+        $application->singleton(self::transactionalMessageDispatcherServiceName(), fn () => $messageDispatcher);
+    }
+
     public static function registerTransactionalMessageDispatcher(?Application $application = null): void
     {
         $application = $application ?? app();
@@ -162,6 +200,14 @@ final class EventSauceConfiguration
 
             return new SynchronousMessageDispatcher(...$messageConsumers);
         });
+    }
+
+    public static function fakeAsynchronousMessageDispatcher(?MessageDispatcher $messageDispatcher = null, ?Application $application = null): void
+    {
+        $application = $application ?? app();
+        $messageDispatcher = $messageDispatcher ?? new SynchronousMessageDispatcher();
+
+        $application->singleton(self::asynchronousMessageDispatcherServiceName(), fn () => $messageDispatcher);
     }
 
     public static function registerAsynchronousMessageDispatcher(?Application $application = null): void
@@ -197,11 +243,23 @@ final class EventSauceConfiguration
         });
     }
 
+    public static function fakeMessageRepository(?MessageRepository $messageRepository = null, ?Application $application = null): void
+    {
+        $application = $application ?? app();
+        $messageRepository = $messageRepository ?? new InMemoryMessageRepository();
+
+        $application->singleton(MessageRepository::class, fn () => $messageRepository);
+    }
+
     public static function registerMessageRepository(string $class, ?Application $application = null): void
     {
         $application = $application ?? app();
 
         switch ($class) {
+            case InMemoryMessageRepository::class:
+                $application->singleton(MessageRepository::class, InMemoryMessageRepository::class);
+
+                // no break
             case IlluminateUuidV4MessageRepository::class:
                 $application->singleton(MessageRepository::class, IlluminateUuidV4MessageRepository::class);
                 $application->singleton(IlluminateUuidV4MessageRepository::class);
@@ -309,5 +367,15 @@ final class EventSauceConfiguration
     public static function eventSourcedRepositoryRegistration(): EventSourcedAggregateRootRepositoryRegistrationBuilder
     {
         return EventSourcedAggregateRootRepositoryRegistrationBuilder::new();
+    }
+
+    /**
+     * @param class-string<AggregateRoot> $aggregateRootClassName
+     */
+    public static function eventSauceRepositoryFor(string $aggregateRootClassName, ?Application $application = null): AggregateRootRepository
+    {
+        $application = $application ?? app();
+
+        return $application->make(self::eventSauceRepositoryServiceName($aggregateRootClassName));
     }
 }

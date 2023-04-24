@@ -128,7 +128,7 @@ final class EventSourcedAggregateRootRepositoryRegistrationBuilder
     ): void {
         $application = $application ?? app();
 
-        $innerInstanceName = $aggregateRootClassName.'.EventSourcedAggregateRootRepository';
+        $innerInstanceName = EventSauceConfiguration::eventSauceRepositoryServiceName($aggregateRootClassName);
 
         $application->singleton($aggregateRootRepositoryInterfaceName, $aggregateRootRepositoryImplementationClassName);
 

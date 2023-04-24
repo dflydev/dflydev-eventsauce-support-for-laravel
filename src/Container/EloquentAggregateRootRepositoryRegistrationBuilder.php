@@ -137,7 +137,7 @@ final class EloquentAggregateRootRepositoryRegistrationBuilder
     ): void {
         $application = $application ?? app();
 
-        $innerInstanceName = $aggregateRootClassName.'.eloquentNonEventSourcedAggregateRootRepository';
+        $innerInstanceName = EventSauceConfiguration::eventSauceRepositoryServiceName($aggregateRootClassName);
 
         $application->singleton($aggregateRootRepositoryInterfaceName, $aggregateRootRepositoryImplementationClassName);
 
