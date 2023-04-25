@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 
 trait CastIdentityToString
 {
+    /**
+     * @param string|null $value
+     */
     public function set(Model $model, string $key, mixed $value, array $attributes)
     {
         if (is_null($value) || is_string($value)) {
