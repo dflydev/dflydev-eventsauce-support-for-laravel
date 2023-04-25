@@ -1,0 +1,26 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Method Dflydev\\\\EventSauce\\\\SupportForLaravel\\\\Container\\\\EloquentAggregateRootRepositoryRegistrationBuilder\\:\\:build\\(\\) has parameter \\$aggregateRootClassName with generic interface Dflydev\\\\EventSauce\\\\SupportForLaravel\\\\AggregateRoot\\\\EloquentAggregateRoot but does not specify its types\\: T1, T2$#"
+			count: 1
+			path: src/Container/EloquentAggregateRootRepositoryRegistrationBuilder.php
+
+		-
+			message: "#^Method Dflydev\\\\EventSauce\\\\SupportForLaravel\\\\Container\\\\EventSourcedAggregateRootRepositoryRegistrationBuilder\\:\\:build\\(\\) has parameter \\$aggregateRootClassName with generic interface Dflydev\\\\EventSauce\\\\Support\\\\AggregateRoot\\\\EventSourcedAggregateRoot but does not specify its types\\: T1, T2$#"
+			count: 1
+			path: src/Container/EventSourcedAggregateRootRepositoryRegistrationBuilder.php
+
+		-
+			message: "#^Method Dflydev\\\\EventSauce\\\\SupportForLaravel\\\\EventSauceConfiguration\\:\\:eventSauceRepositoryFor\\(\\) has parameter \\$aggregateRootClassName with generic interface EventSauce\\\\EventSourcing\\\\AggregateRoot but does not specify its types\\: AggregateRootIdType$#"
+			count: 1
+			path: src/EventSauceConfiguration.php
+
+		-
+			message: "#^Method Dflydev\\\\EventSauce\\\\SupportForLaravel\\\\EventSauceConfiguration\\:\\:eventSauceRepositoryFor\\(\\) return type with generic interface EventSauce\\\\EventSourcing\\\\AggregateRootRepository does not specify its types\\: T$#"
+			count: 1
+			path: src/EventSauceConfiguration.php
+
+		-
+			message: "#^Method Dflydev\\\\EventSauce\\\\SupportForLaravel\\\\EventSauceConfiguration\\:\\:eventSauceRepositoryServiceName\\(\\) has parameter \\$aggregateRootClassName with generic interface EventSauce\\\\EventSourcing\\\\AggregateRoot but does not specify its types\\: AggregateRootIdType$#"
+			count: 1
+			path: src/EventSauceConfiguration.php
