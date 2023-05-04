@@ -17,12 +17,6 @@
         "orchestra/testbench": "^8.0",
         "phpstan/phpstan": "^1.10"
     },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/dflydev/dflydev-php-coding-standards"
-        }
-    ],
     "autoload": {
         "psr-4": {
             "Dflydev\\EventSauce\\SupportForLaravel\\": "src/"
