@@ -24,5 +24,10 @@
         "phpstan/phpstan": "^1.10",
         "nunomaduro/larastan": "^2.5",
         "orchestra/testbench": "^8.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "ergebnis/composer-normalize": true
+        }
     }
 }
