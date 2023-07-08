@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Dflydev\EventSauce\SupportForLaravel\Container;
 
+use Dflydev\EventSauce\Support\MessagePreparation\DefaultMessagePreparation;
 use Dflydev\EventSauce\Support\Transaction\Transaction;
 use Dflydev\EventSauce\SupportForLaravel\AggregateRoot\EloquentAggregateRoot;
 use Dflydev\EventSauce\SupportForLaravel\AggregateRoot\EloquentAggregateRootRepository;
 use Dflydev\EventSauce\SupportForLaravel\EventSauceConfiguration;
 use EventSauce\EventSourcing\AggregateRootRepository;
+use EventSauce\EventSourcing\MessageDecorator;
 use EventSauce\EventSourcing\MessageDispatcher;
 use EventSauce\EventSourcing\MessageRepository;
 use EventSauce\EventSourcing\SynchronousMessageDispatcher;
@@ -28,6 +30,11 @@ final class EloquentAggregateRootRepositoryRegistrationBuilder
     private OutboxRepository|string|null $outboxRepository;
 
     /**
+     * @var MessageDecorator|class-string<MessageDecorator>|null
+     */
+    private MessageDecorator|string|null $messageDecorator;
+
+    /**
      * @var MessageDispatcher|class-string<MessageDispatcher>|null
      */
     private MessageDispatcher|string|null $transactionalMessageDispatcher;
@@ -40,6 +47,7 @@ final class EloquentAggregateRootRepositoryRegistrationBuilder
     private bool $withoutOutboxRepository = false;
     private bool $withoutTransactionalMessageDispatcher = false;
     private bool $withoutSynchronousMessageDispatcher = false;
+    private bool $withoutMessageDecorator = false;
 
     private function __construct()
     {
@@ -68,6 +76,17 @@ final class EloquentAggregateRootRepositoryRegistrationBuilder
     {
         $instance = clone $this;
         $instance->outboxRepository = $outboxRepository ?? OutboxRepository::class;
+
+        return $instance;
+    }
+
+    /**
+     * @param class-string<MessageDecorator>|MessageDecorator|null $messageDecorator
+     */
+    public function withMessageDecorator(null|string|MessageDecorator $messageDecorator = null): self
+    {
+        $instance = clone $this;
+        $instance->messageDecorator = $messageDecorator ?? MessageDecorator::class;
 
         return $instance;
     }
@@ -106,6 +125,14 @@ final class EloquentAggregateRootRepositoryRegistrationBuilder
     {
         $instance = clone $this;
         $instance->withoutOutboxRepository = true;
+
+        return $instance;
+    }
+
+    public function withoutMessageDecorator(): self
+    {
+        $instance = clone $this;
+        $instance->withoutMessageDecorator = true;
 
         return $instance;
     }
@@ -168,7 +195,7 @@ final class EloquentAggregateRootRepositoryRegistrationBuilder
                 if (isset($this->outboxRepository)) {
                     $args['outboxRepository'] = is_object($this->outboxRepository) ? $this->outboxRepository : $app->get($this->outboxRepository);
                 } elseif ($app->bound(OutboxRepository::class)) {
-                    $args['transactionalMessageDispatcher'] = $app->get(OutboxRepository::class);
+                    $args['outboxRepository'] = $app->get(OutboxRepository::class);
                 }
             }
 
@@ -186,6 +213,21 @@ final class EloquentAggregateRootRepositoryRegistrationBuilder
                 } elseif ($app->bound(EventSauceConfiguration::synchronousMessageDispatcherServiceName())) {
                     $args['synchronousMessageDispatcher'] = $app->get(EventSauceConfiguration::synchronousMessageDispatcherServiceName());
                 }
+            }
+
+            /** @var array{'messageDecorator'?: MessageDecorator|null} $messagePreparationArgs */
+            $messagePreparationArgs = [];
+
+            if (!$this->withoutMessageDecorator) {
+                if (isset($this->messageDecorator)) {
+                    $messagePreparationArgs['messageDecorator'] = is_object($this->messageDecorator) ? $this->messageDecorator : $app->get($this->messageDecorator);
+                } elseif ($app->bound(MessageDecorator::class)) {
+                    $messagePreparationArgs['messageDecorator'] = $app->get(MessageDecorator::class);
+                }
+            }
+
+            if (count($messagePreparationArgs)) {
+                $args['messagePreparation'] = new DefaultMessagePreparation(...$messagePreparationArgs);
             }
 
             return new EloquentAggregateRootRepository(...$args);

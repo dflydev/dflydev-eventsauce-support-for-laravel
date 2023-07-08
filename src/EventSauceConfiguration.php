@@ -36,6 +36,18 @@ use LogicException;
 
 final class EventSauceConfiguration
 {
+    public static function registerMessageDecorator(string|array $messageConsumerClassName, ?Application $application = null): void
+    {
+        $application = $application ?? app();
+
+        $messageConsumerClassNames = is_array($messageConsumerClassName) ? $messageConsumerClassName : [$messageConsumerClassName];
+
+        foreach ($messageConsumerClassNames as $messageConsumerClassName) {
+            $application->singleton($messageConsumerClassName);
+            $application->tag($messageConsumerClassName, MessageDecorator::class);
+        }
+    }
+
     /**
      * @param class-string<AggregateRoot> $aggregateRootClassName
      */
@@ -333,7 +345,7 @@ final class EventSauceConfiguration
         $application->singleton(PayloadSerializer::class, $class);
     }
 
-    public static function registerMessageDecorator(?Application $application = null): void
+    public static function registerDefaultMessageDecorator(?Application $application = null): void
     {
         $application = $application ?? app();
 
